@@ -1,11 +1,253 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy Analyzer</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-cloud/build/d3.layout.cloud.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      color: #f5f5f5;
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: #1a1a1a;
+      color: #fff;
+      text-align: center;
+      padding: 1.5rem 0;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: #1e1e1e;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border: 1px solid #444;
+      border-radius: 8px;
+      font-size: 16px;
+      resize: none;
+      background-color: #333;
+      color: #f5f5f5;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-right: 10px;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .output {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #333;
+      border-radius: 8px;
+      border: 1px solid #444;
+    }
+
+    .output h3 {
+      margin-top: 0;
+      font-size: 1.5rem;
+    }
+
+    #wordCloudContainer {
+      margin: 2rem auto 0;
+      text-align: center;
+    }
+
+    #wordCloud {
+      width: 600px;
+      height: 400px;
+      margin: 0 auto;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      margin-top: 3rem;
+      background-color: #1a1a1a;
+      color: white;
+    }
+
+    footer p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
 <body>
-    
+  <header>
+    <h1>Privacy Policy Analyzer</h1>
+  </header>
+  <main>
+    <p>Analyze privacy policy text for readability, sentiment, and other key metrics. Paste the text below to begin:</p>
+    <textarea id="policyText" placeholder="Paste your privacy policy here..."></textarea>
+    <button onclick="analyzePolicy()">Analyze</button>
+    <button onclick="downloadResults()">Download Results</button>
+
+    <div class="output" id="analysisOutput" style="display: none;">
+      <h3>Analysis Results:</h3>
+      <p><strong>Word Count:</strong> <span id="wordCount"></span></p>
+      <p><strong>Unique Words:</strong> <span id="uniqueWords"></span></p>
+      <p><strong>Average Readability Score:</strong> <span id="readabilityScore"></span></p>
+      <p><strong>Reading Level:</strong> <span id="readingLevel"></span></p>
+      <p><strong>Estimated Reading Time:</strong> <span id="readingTime"></span></p>
+      <p><strong>Longest Sentence:</strong> <span id="longestSentence"></span></p>
+      <p><strong>Sentiment:</strong> <span id="sentiment"></span></p>
+      <div id="wordCloudContainer">
+        <h4>Word Cloud:</h4>
+        <svg id="wordCloud"></svg>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <p>&copy; 2024 Privacy Policy Analyzer. All rights reserved.</p>
+  </footer>
+  <script>
+    function analyzePolicy() {
+        const text = document.getElementById('policyText').value;
+        const output = document.getElementById('analysisOutput');
+        const wordArray = text.toLowerCase().split(/\s+/).filter(word => word);
+      
+        // Word count
+        const wordCount = wordArray.length;
+      
+        // Unique words
+        const uniqueWords = new Set(wordArray).size;
+      
+        // Readability formula
+        const sentences = text.split(/[.!?]/).filter(sentence => sentence.trim().length > 0);
+        const avgWordLength = text.replace(/\s+/g, '').length / wordCount;
+        const avgSentenceLength = wordCount / (sentences.length || 1);
+        const readabilityScore = ((avgWordLength + avgSentenceLength) / 2).toFixed(2);
+      
+        // Reading level classification
+        const readingLevel = 
+          readabilityScore < 5 ? "Elementary" : 
+          readabilityScore < 8 ? "Middle School" :
+          readabilityScore < 12 ? "High School" : "College";
+      
+        // Estimated reading time (200 words per minute)
+        const readingTime = Math.ceil(wordCount / 200) + " minute(s)";
+      
+        // Longest sentence
+        const longestSentence = sentences.reduce((longest, current) => current.length > longest.length ? current : longest, '');
+      
+        // Sentiment analysis
+        const positiveWords = ["good", "secure", "safe", "protect", "privacy"];
+        const negativeWords = ["data breach", "sell", "share", "collect"];
+        const sentiment = positiveWords.some(word => text.includes(word)) ? "Positive" : 
+                          negativeWords.some(word => text.includes(word)) ? "Negative" : "Neutral";
+      
+        // Word frequency for word cloud, excluding stop words
+        const stopwords = ["i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"];
+        const wordFrequency = {};
+        wordArray.forEach(word => {
+          if (!stopwords.includes(word)) {
+            wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+          }
+        });
+      
+        const wordCloudData = Object.entries(wordFrequency).map(([word, count]) => ({
+          text: word,
+          size: 10 + count * 5, // Adjust size for word frequency
+        }));
+      
+        generateWordCloud(wordCloudData);
+      
+        // Display results
+        document.getElementById('wordCount').innerText = wordCount;
+        document.getElementById('uniqueWords').innerText = uniqueWords;
+        document.getElementById('readabilityScore').innerText = readabilityScore;
+        document.getElementById('readingLevel').innerText = readingLevel;
+        document.getElementById('readingTime').innerText = readingTime;
+        document.getElementById('longestSentence').innerText = longestSentence.trim();
+        document.getElementById('sentiment').innerText = sentiment;
+        output.style.display = "block";
+      }
+      
+
+    function generateWordCloud(words) {
+      const svg = d3.select("#wordCloud");
+      svg.selectAll("*").remove();
+
+      const width = 600;
+      const height = 400;
+
+      const layout = d3.layout.cloud()
+        .size([width, height])
+        .words(words)
+        .padding(5)
+        .rotate(() => ~~(Math.random() * 2) * 90)
+        .fontSize(d => d.size)
+        .on("end", draw);
+
+      layout.start();
+
+      function draw(words) {
+        svg.attr("width", width).attr("height", height)
+          .append("g")
+          .attr("transform", `translate(${width / 2}, ${height / 2})`)
+          .selectAll("text")
+          .data(words)
+          .enter().append("text")
+          .style("font-size", d => d.size + "px")
+          .style("fill", () => d3.schemeCategory10[Math.floor(Math.random() * 10)])
+          .attr("text-anchor", "middle")
+          .attr("transform", d => `translate(${[d.x, d.y]})rotate(${d.rotate})`)
+          .text(d => d.text);
+      }
+    }
+
+    function downloadResults() {
+      const results = {
+        wordCount: document.getElementById('wordCount').innerText,
+        uniqueWords: document.getElementById('uniqueWords').innerText,
+        readabilityScore: document.getElementById('readabilityScore').innerText,
+        readingLevel: document.getElementById('readingLevel').innerText,
+        readingTime: document.getElementById('readingTime').innerText,
+        longestSentence: document.getElementById('longestSentence').innerText,
+        sentiment: document.getElementById('sentiment').innerText
+      };
+
+      const blob = new Blob([JSON.stringify(results, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "privacy_policy_analysis.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
 </body>
 </html>
